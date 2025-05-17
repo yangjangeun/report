@@ -3,7 +3,7 @@ import openai
 import os
 
 # openai_api_key를 api_key.txt에서 읽어오기
-openai_api_key = st.secrets["OPENAI_API_KEY"]
+OPENAI_API_KEY = "OPENAI_API_KEY"
 
 st.title("  자동 업무보고서 생성기")
 
