@@ -6,10 +6,10 @@ import os
 openai_api_key = st.secrets["OPENAI_API_KEY"]
 
 st.title("  자동 보고서 생성기")
+st.markdown("<span style='color:red; font-weight:bold;'>아래 폼 예시 참고</span>", unsafe_allow_html=True)
 
 # 타이틀/목차 입력 예시 이미지 추가
 st.image('example.png', caption=None)
-st.markdown("<span style='color:red; font-weight:bold;'>위 예시를 참고해서 입력</span>", unsafe_allow_html=True)
 # 타이틀(목차) 입력
 st.markdown("#### 타이틀/목차를 입력하세요")
 title = st.text_area("타이틀/목차 입력", height=200)
