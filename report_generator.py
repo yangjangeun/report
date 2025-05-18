@@ -1,118 +1,67 @@
 import streamlit as st
-from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.enum.text import PP_ALIGN
-import io
-import textwrap
-import re
 import openai
+import os
 
-openai_api_key = st.secrets["OPENAI_API_KEY"]
+# openai_api_key를 api_key.txt에서 읽어오기
+api_key_path = 'api_key.txt'
+openai_api_key = None
+if os.path.exists(api_key_path):
+    with open(api_key_path, 'r', encoding='utf-8') as f:
+        openai_api_key = f.read().strip()
 
-st.title("PPT 자동 생성기 (Streamlit)")
+st.title("  자동 업무보고서 생성기")
 
-st.markdown('''
-**❗️아래 예시처럼 반드시 번호+제목+내용 구조로 입력해야 합니다!**
+# 타이틀/목차 입력 예시 이미지 추가
+st.image('example.png', caption=None)
+st.markdown("<span style='color:red; font-weight:bold;'>위 예시를 참고해서 입력</span>", unsafe_allow_html=True)
+# 타이틀(목차) 입력
+st.markdown("#### 타이틀/목차를 입력하세요")
+title = st.text_area("타이틀/목차 입력", height=200)
 
-예시:
-1. 사업의 필요성
-사업의 필요성에 대한 내용
+# 분량 선택
+length_option = st.selectbox(
+    "원하는 분량을 선택하세요",
+    ("A4 반장 (약 600자)", "A4 1장 (약 1200자)", "A4 2장 (약 1400자)")
+)
 
-2. 사업의 개요
-사업의 개요에 대한 내용
+if length_option == "A4 반장 (약 600자)":
+    char_count = 600
+elif length_option == "A4 1장 (약 1200자)":
+    char_count = 1200
+else:
+    char_count = 1400
 
-3. 기대효과
-기대효과에 대한 내용
-''')
+if st.button("보고서 생성하기"):
+    if not title.strip():
+        st.warning("타이틀/목차를 입력해주세요.")
+    elif not openai_api_key:
+        st.error("OpenAI API 키가 api_key.txt에 설정되어 있지 않습니다.")
+    else:
+        with st.spinner("보고서를 생성 중입니다..."):
+            prompt = f"""
+            아래의 목차에 따라 지방자치단체 기획 업무보고서를 작성해줘.
 
-st.markdown("문장을 복사해서 넣으면 요약해 PPT로 만들어줌 (만들고 싶은 페이지 수 선택)")
-
-content = st.text_area("PPT로 만들고 싶은 내용을 입력하세요...", height=200)
-
-col1, col2 = st.columns([1, 1])
-with col1:
-    page_count = st.number_input("페이지 수", min_value=1, value=3, step=1, key="page_count")
-with col2:
-    make_summary = st.button("요약 생성")
-
-# 슬라이드 분할 및 요약
-if make_summary:
-    items = re.findall(r'(\d+)\.\s*([^\n]+)\n([^\n]+(?:\n(?!\d+\.).+)*)', content, re.MULTILINE)
-    slides_content = []
-    client = openai.OpenAI(api_key=openai_api_key)
-    for idx, title, item_content in items:
-        prompt = f"다음 내용을 2~3줄의 bullet point로 요약해줘:\n{item_content.strip()}"
-        try:
+            - 목차: {title}
+            - 반드시 {char_count}자에 최대한 가깝게 작성해줘. 글자수가 부족하면 추가로 더 길게, 충분히 자세히 작성해줘. {char_count}자에 최대한 근접하게 작성해줘.
+            - 2023년, 2024년, 2025년년 기준 최신 정책, 통계, 트렌드, 법령 등 최신 정보를 반영해서 작성해줘.
+            - 최근의 사회적 이슈와 정책 방향을 중심으로 작성해줘.
+            - 지방자치단체 기획 전문가의 시각에서, 실무적으로 신뢰성 있게 작성해줘.
+            - 각 항목별로 개조식(글머리표)으로 작성하되, 각 bullet point는 1~2줄로 작성해줘.
+            - 각 항목별로 2~5개 정도로로 bullet point로 작성해줘.
+            - 불필요한 서론, 결론 없이 바로 항목별로 시작해줘.
+            - 만약 '관련법' 항목이 있다면, 해당 주제와 연관된 대한민국 법령을 간략하게 요약해서 포함해줘.
+            - 모든 bullet point의 끝맺음 표현은 '있음', '였음' 이런 형태로 작성해줘. 
+            - 반드시 {char_count}자에 최대한 가깝게 작성해줘.
+            """
+            client = openai.OpenAI(api_key=openai_api_key)
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4-1106-preview",
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=512,
+                max_tokens=min(char_count * 3, 4096),
                 temperature=0.7,
             )
-            summary = response.choices[0].message.content.strip()
-        except Exception as e:
-            summary = f"(요약 실패: {e})\n{item_content.strip()}"
-        slides_content.append({'title': title.strip(), 'content': summary})
+            report = response.choices[0].message.content
+            st.text_area("생성된 보고서", report, height=500)
+            st.download_button("보고서 다운로드", report, file_name="report.txt")
 
-    # 슬라이드가 1개도 없으면 경고만 띄우고, 미리보기는 안 보이게!
-    if not slides_content:
-        st.session_state['grouped_slides'] = None
-        st.error("❗️입력한 내용에서 번호(1. 2. 3. ...)로 구분된 슬라이드가 없습니다.\n\n아래 예시처럼 반드시 번호+제목+내용 구조로 입력해 주세요!\n\n예시:\n1. 사업의 필요성\n사업의 필요성에 대한 내용\n\n2. 사업의 개요\n사업의 개요에 대한 내용\n\n3. 기대효과\n기대효과에 대한 내용")
-    else:
-        def group_sections_by_page(sections, page_count):
-            n = len(sections)
-            base = n // page_count
-            extra = n % page_count
-            grouped = []
-            idx = 0
-            for i in range(page_count):
-                count = base + (1 if i < extra else 0)
-                grouped.append(sections[idx:idx+count])
-                idx += count
-            return grouped
-
-        grouped_slides = group_sections_by_page(slides_content, int(page_count))
-        st.session_state['grouped_slides'] = grouped_slides
-
-# 페이지별 미리보기 및 수정 (슬라이드가 있을 때만!)
-if 'grouped_slides' in st.session_state and st.session_state['grouped_slides']:
-    st.markdown("**페이지별 내용 미리보기 및 수정**")
-    edited_grouped_slides = []
-    for page_idx, group in enumerate(st.session_state['grouped_slides']):
-        st.markdown(f"---\n### 페이지 {page_idx+1}")
-        edited_group = []
-        for slide_idx, slide in enumerate(group):
-            title = st.text_input(f"페이지 {page_idx+1} - 슬라이드 {slide_idx+1} 제목", value=slide['title'], key=f"title_{page_idx}_{slide_idx}")
-            body = st.text_area(f"페이지 {page_idx+1} - 슬라이드 {slide_idx+1} 내용", value=slide['content'], key=f"body_{page_idx}_{slide_idx}")
-            edited_group.append({'title': title, 'content': body})
-        edited_grouped_slides.append(edited_group)
-
-    if st.button("PPT 생성"):
-        prs = Presentation()
-        for group in edited_grouped_slides:
-            slide = prs.slides.add_slide(prs.slide_layouts[6])
-            y_offset = 0.5
-            for slide_content in group:
-                title_shape = slide.shapes.add_textbox(Inches(0.7), Inches(y_offset), Inches(6.5), Inches(1))
-                title_frame = title_shape.text_frame
-                title_frame.clear()
-                p_title = title_frame.add_paragraph()
-                p_title.text = slide_content.get('title', '')
-                p_title.font.size = Pt(36)
-                p_title.font.bold = True
-                p_title.alignment = PP_ALIGN.LEFT
-                y_offset += 1
-                content_shape = slide.shapes.add_textbox(Inches(0.7), Inches(y_offset), Inches(6.5), Inches(3.5))
-                content_frame = content_shape.text_frame
-                content_frame.clear()
-                for line in slide_content.get('content', '').split('\n'):
-                    if line.strip():
-                        for wrapped_line in textwrap.wrap(line.strip(), width=40):
-                            p = content_frame.add_paragraph()
-                            p.text = wrapped_line
-                            p.font.size = Pt(20)
-                            p.alignment = PP_ALIGN.LEFT
-                y_offset += 2.5
-        ppt_io = io.BytesIO()
-        prs.save(ppt_io)
-        st.download_button("PPT 다운로드", ppt_io.getvalue(), file_name="output.pptx")
+st.markdown("---")
