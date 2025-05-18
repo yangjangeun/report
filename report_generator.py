@@ -5,7 +5,7 @@ import os
 # openai_api_key를 api_key.txt에서 읽어오기
 openai_api_key = st.secrets["OPENAI_API_KEY"]
 
-st.title("  자동 업무보고서 생성기")
+st.title("  자동 보고서 생성기")
 
 # 타이틀/목차 입력 예시 이미지 추가
 st.image('example.png', caption=None)
