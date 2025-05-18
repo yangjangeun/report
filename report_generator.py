@@ -1,12 +1,8 @@
 import streamlit as st
 import openai
-import os
 
-# openai_api_key를 api_key.txt에서 읽어오기
+# OpenAI API 키를 Streamlit Secrets에서 가져오기
 openai_api_key = st.secrets["OPENAI_API_KEY"]
-if os.path.exists(api_key_path):
-    with open(api_key_path, 'r', encoding='utf-8') as f:
-        openai_api_key = f.read().strip()
 
 st.title("  자동 업무보고서 생성기")
 
@@ -34,7 +30,7 @@ if st.button("보고서 생성하기"):
     if not title.strip():
         st.warning("타이틀/목차를 입력해주세요.")
     elif not openai_api_key:
-        st.error("OpenAI API 키가 api_key.txt에 설정되어 있지 않습니다.")
+        st.error("OpenAI API 키가 설정되어 있지 않습니다.")
     else:
         with st.spinner("보고서를 생성 중입니다..."):
             prompt = f"""
