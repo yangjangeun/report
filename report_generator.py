@@ -15,6 +15,7 @@ st.markdown('''
 **❗️아래 예시처럼 반드시 번호+제목+내용 형태와 유사한 구조로 입력해야 합니다!**
 
 예시: 사업계획인 경우
+
 1. 사업의 필요성
 사업의 필요성에 대한 내용
 
@@ -35,8 +36,8 @@ with col1:
 with col2:
     make_summary = st.button("요약 생성")
 
+# 슬라이드 분할 및 요약
 if make_summary:
-    # 번호+제목+내용 구조로 슬라이드 분할
     items = re.findall(r'(\d+)\.\s*([^\n]+)\n([^\n]+(?:\n(?!\d+\.).+)*)', content, re.MULTILINE)
     slides_content = []
     client = openai.OpenAI(api_key=openai_api_key)
@@ -54,10 +55,10 @@ if make_summary:
             summary = f"(요약 실패: {e})\n{item_content.strip()}"
         slides_content.append({'title': title.strip(), 'content': summary})
 
-    # 슬라이드가 1개도 없으면 경고
+    # 슬라이드가 1개도 없으면 경고만 띄우고, 미리보기는 안 보이게!
     if not slides_content:
+        st.session_state['grouped_slides'] = None
         st.error("❗️입력한 내용에서 번호(1. 2. 3. ...)로 구분된 슬라이드가 없습니다.\n\n아래 예시처럼 반드시 번호+제목+내용 구조로 입력해 주세요!\n\n예시:\n1. 사업의 필요성\n사업의 필요성에 대한 내용\n\n2. 사업의 개요\n사업의 개요에 대한 내용\n\n3. 기대효과\n기대효과에 대한 내용")
-        st.session_state['grouped_slides'] = []
     else:
         def group_sections_by_page(sections, page_count):
             n = len(sections)
@@ -74,6 +75,7 @@ if make_summary:
         grouped_slides = group_sections_by_page(slides_content, int(page_count))
         st.session_state['grouped_slides'] = grouped_slides
 
+# 페이지별 미리보기 및 수정 (슬라이드가 있을 때만!)
 if 'grouped_slides' in st.session_state and st.session_state['grouped_slides']:
     st.markdown("**페이지별 내용 미리보기 및 수정**")
     edited_grouped_slides = []
