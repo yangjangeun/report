@@ -3,8 +3,7 @@ import openai
 import os
 
 # openai_api_key를 api_key.txt에서 읽어오기
-api_key_path = 'api_key.txt'
-openai_api_key = None
+openai_api_key = st.secrets["OPENAI_API_KEY"]
 if os.path.exists(api_key_path):
     with open(api_key_path, 'r', encoding='utf-8') as f:
         openai_api_key = f.read().strip()
