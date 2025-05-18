@@ -5,12 +5,12 @@ import openai
 openai_api_key = st.secrets["OPENAI_API_KEY"]
 
 st.title("  자동 업무보고서 생성기")
-st.markdown("<span style='color:red; font-weight:bold;'>아래 예시를 참고해서 소주제를 번호로 구분 표시</span>", unsafe_allow_html=True)
+st.markdown("<span style='color:red; font-weight:bold;'>아래 예시를 참고해서 소주제를 기호 또는 번호로 구분 표시</span>", unsafe_allow_html=True)
 # 타이틀/목차 입력 예시 이미지 추가
 st.image('example.png', caption=None)
 
 # 타이틀(목차) 입력
-title = st.text_area("타이틀/목차를 번호로 구분 입력", height=200)
+title = st.text_area("목차를 기호나 번호로 구분 표시 입력(한글 등에서 복사해서 넣기)", height=200)
 
 # 분량 선택
 length_option = st.selectbox(
