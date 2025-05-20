@@ -4,7 +4,7 @@ import openai
 # OpenAI API 키를 Streamlit Secrets에서 가져오기
 openai_api_key = st.secrets["OPENAI_API_KEY"]
 
-st.title("  자동 업무보고서 생성기")
+st.title("업무보고서 생성기")
 st.markdown("<span style='color:red; font-weight:bold;'>아래 예시를 참고해서 소주제를 기호 또는 번호로 구분 표시</span>", unsafe_allow_html=True)
 # 타이틀/목차 입력 예시 이미지 추가
 st.image('example.png', caption=None)
